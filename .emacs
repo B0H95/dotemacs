@@ -19,3 +19,4 @@
 (setq default-buffer-file-coding-system 'utf-8-unix)
 (setq initial-major-mode 'fundamental-mode)
 (setq initial-scratch-message nil)
+(setq line-move-visual nil)
