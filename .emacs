@@ -20,3 +20,4 @@
 (setq initial-major-mode 'fundamental-mode)
 (setq initial-scratch-message nil)
 (setq line-move-visual nil)
+(global-set-key (kbd "C-c p") 'find-lisp-find-dired)
