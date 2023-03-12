@@ -21,3 +21,17 @@
 (setq initial-scratch-message nil)
 (setq line-move-visual nil)
 (global-set-key (kbd "C-c p") 'find-lisp-find-dired)
+
+;(defun b0h-format ()
+;  (interactive)
+;  (let ((line (- (line-number-at-pos) 1))
+;        (column (- (point) (line-beginning-position))))
+;    (call-process-region (point-min) (point-max) "format --param1 --param2 --etc" t t)
+;    (goto-char (point-min))
+;    (forward-line line)
+;    (forward-char column)
+;    (if (/= line (- (line-number-at-pos) 1))
+;        (progn
+;          (goto-char (point-min))
+;          (forward-line line)
+;          (move-end-of-line nil)))))
