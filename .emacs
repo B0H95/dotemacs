@@ -21,6 +21,18 @@
 (setq initial-scratch-message nil)
 (setq line-move-visual nil)
 (global-set-key (kbd "C-c p") 'find-lisp-find-dired)
+;; reference: https://emacs.stackexchange.com/questions/21651
+(defun b0h-reasonable-window-split (&optional window)
+  (cond
+   ((and (> (window-width window)
+            (window-height window))
+          (window-splittable-p window 'horizontal))
+    (with-selected-window window
+      (split-window-right)))
+   ((window-splittable-p window)
+    (with-selected-window window
+      (split-window-below)))))
+(setq split-window-preferred-function #'b0h-reasonable-window-split)
 
 ;(defun b0h-format ()
 ;  (interactive)
