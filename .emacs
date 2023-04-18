@@ -26,24 +26,37 @@
   (cond
    ((and (> (window-width window)
             (window-height window))
-          (window-splittable-p window 'horizontal))
+         (window-splittable-p window 'horizontal))
     (with-selected-window window
       (split-window-right)))
    ((window-splittable-p window)
     (with-selected-window window
       (split-window-below)))))
 (setq split-window-preferred-function #'b0h-reasonable-window-split)
-
-;(defun b0h-format ()
-;  (interactive)
-;  (let ((line (- (line-number-at-pos) 1))
-;        (column (- (point) (line-beginning-position))))
-;    (call-process-region (point-min) (point-max) "format --param1 --param2 --etc" t t)
-;    (goto-char (point-min))
-;    (ignore-errors (forward-line line))
-;    (ignore-errors (forward-char column))
-;    (if (/= line (- (line-number-at-pos) 1))
-;        (progn
-;          (goto-char (point-min))
-;          (ignore-errors (forward-line line))
-;          (move-end-of-line nil)))))
+(setq b0h-saved-point-line nil)
+(setq b0h-saved-point-column nil)
+(defun b0h-save-point ()
+  (interactive)
+  (progn
+    (setq b0h-saved-point-line (- (line-number-at-pos) 1))
+    (setq b0h-saved-point-column (- (point) (line-beginning-position)))))
+(defun b0h-load-point ()
+  (interactive)
+  (if b0h-saved-point-line
+      (if b0h-saved-point-column
+          (progn
+            (goto-char (point-min))
+            (ignore-errors (forward-line b0h-saved-point-line))
+            (ignore-errors (forward-char b0h-saved-point-column))
+            (if (/= b0h-saved-point-line (- (line-number-at-pos) 1))
+                (progn
+                  (goto-char (point-min))
+                  (ignore-errors (forward-line b0h-saved-point-line))
+                  (move-end-of-line nil)))))))
+;; check "M-x find-function shell-command-on-region" for details
+(defun b0h-format-file (command)
+  (interactive (list (read-shell-command "Shell command: ")))
+  (b0h-save-point)
+  (call-process-region (point-min) (point-max) shell-file-name t t nil shell-command-switch command)
+  (b0h-load-point)
+  (recenter-top-bottom))
