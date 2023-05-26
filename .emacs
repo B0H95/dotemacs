@@ -60,3 +60,13 @@
   (call-process-region (point-min) (point-max) shell-file-name t t nil shell-command-switch command)
   (b0h-load-point)
   (recenter-top-bottom))
+(define-key key-translation-map (kbd "TAB") (kbd "M-/"))
+(define-key key-translation-map (kbd "M-/") (kbd "TAB"))
+(add-hook 'minibuffer-setup-hook
+          (lambda ()
+            (define-key key-translation-map (kbd "TAB") (kbd "TAB"))
+            (define-key key-translation-map (kbd "M-/") (kbd "M-/"))))
+(add-hook 'minibuffer-exit-hook
+          (lambda ()
+            (define-key key-translation-map (kbd "TAB") (kbd "M-/"))
+            (define-key key-translation-map (kbd "M-/") (kbd "TAB"))))
