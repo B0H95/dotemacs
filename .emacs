@@ -70,3 +70,7 @@
           (lambda ()
             (define-key key-translation-map (kbd "TAB") (kbd "M-/"))
             (define-key key-translation-map (kbd "M-/") (kbd "TAB"))))
+(setq isearch-lazy-count t)
+(fido-mode 1)
+(fido-vertical-mode 1)
+(set-background-color "#FFFFE1")
