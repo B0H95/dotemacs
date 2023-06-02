@@ -62,6 +62,7 @@
   (recenter-top-bottom))
 (define-key key-translation-map (kbd "TAB") (kbd "M-/"))
 (define-key key-translation-map (kbd "M-/") (kbd "TAB"))
+(define-key key-translation-map (kbd "C-z") (kbd "TAB"))
 (add-hook 'minibuffer-setup-hook
           (lambda ()
             (define-key key-translation-map (kbd "TAB") (kbd "TAB"))
@@ -79,3 +80,4 @@
 (set-face-background hl-line-face "#F0F0D3")
 (define-key key-translation-map (kbd "C-o") (kbd "C-x o"))
 (define-key key-translation-map (kbd "C-x o") (kbd "C-o"))
+(setq column-number-mode t)
