@@ -74,3 +74,8 @@
 (fido-mode 1)
 (fido-vertical-mode 1)
 (set-background-color "#FFFFE1")
+(blink-cursor-mode 0)
+(global-hl-line-mode 1)
+(set-face-background hl-line-face "#F0F0D3")
+(define-key key-translation-map (kbd "C-o") (kbd "C-x o"))
+(define-key key-translation-map (kbd "C-x o") (kbd "C-o"))
