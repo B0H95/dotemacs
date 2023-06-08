@@ -61,6 +61,7 @@
   (b0h-load-point)
   (recenter-top-bottom))
 (setq b0h-highlights (make-hash-table :test 'equal))
+(setq hi-lock-auto-select-face nil) ;; variable doesn't exist by default
 (defun b0h-toggle-highlight-at-point ()
   (interactive)
   (save-excursion
