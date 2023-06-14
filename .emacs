@@ -174,3 +174,9 @@
 (set-face-attribute 'lazy-highlight nil :background b0h-theme-search-highlight-color)
 (setq confirm-kill-emacs #'yes-or-no-p)
 (global-set-key (kbd "C-x å") 'enlarge-window)
+(defun b0h-toggle-selective-display ()
+  (interactive)
+  (if selective-display
+      (set-selective-display nil)
+    (set-selective-display (+ (current-column) 1))))
+(global-set-key (kbd "C-x o") 'b0h-toggle-selective-display)
