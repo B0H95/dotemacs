@@ -180,3 +180,4 @@
       (set-selective-display nil)
     (set-selective-display (+ (current-column) 1))))
 (global-set-key (kbd "C-x o") 'b0h-toggle-selective-display)
+(put 'narrow-to-region 'disabled nil)
