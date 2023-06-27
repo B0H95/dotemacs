@@ -181,3 +181,28 @@
     (set-selective-display (+ (current-column) 1))))
 (global-set-key (kbd "C-x o") 'b0h-toggle-selective-display)
 (put 'narrow-to-region 'disabled nil)
+;; inspiration: https://stackoverflow.com/a/12101330
+(defun b0h-find-file-at-point-with-line ()
+  (interactive)
+  (let ((line 0)
+        (maxpoint (save-excursion
+                    (move-end-of-line nil)
+                    (point))))
+    (save-excursion
+      (search-forward-regexp "[^ ]:" maxpoint t)
+      (if (looking-at "[0-9]+")
+          (setq line (string-to-number (buffer-substring (match-beginning 0) (match-end 0))))))
+    (find-file-at-point)
+    (if (not (equal line 0))
+        (progn
+          (goto-line line)
+          (recenter-top-bottom)))))
+(global-set-key (kbd "C-x m") 'b0h-find-file-at-point-with-line)
+(defun b0h-isearch-forward-symbol-at-point ()
+  (interactive)
+  (let ((default-case-fold-search case-fold-search))
+    (setq case-fold-search nil)
+    (isearch-forward-symbol-at-point)
+    (setq case-fold-search default-case-fold-search)))
+(global-set-key (kbd "M-s .") 'b0h-isearch-forward-symbol-at-point)
+(global-subword-mode 1)
