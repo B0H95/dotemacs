@@ -219,3 +219,134 @@
 (setq kill-buffer-query-functions (delq 'process-kill-buffer-query-function kill-buffer-query-functions))
 (global-set-key (kbd "M-ä") 'forward-paragraph)
 (global-set-key (kbd "M-ö") 'backward-paragraph)
+(defconst b0h-jump-mode-input-chars (list
+                                     "q" "w" "e" "r" "t" "y" "u" "i" "o" "p"
+                                     "a" "s" "d" "f" "g" "h" "j" "k" "l"
+                                     "z" "x" "c" "v" "b" "n" "m"))
+;; TODO: generate this list (see how global-map is created)
+(defconst b0h-jump-mode-self-insert-keys (list
+                                          "§" "1" "2" "3" "4" "5" "6" "7" "8" "9" "0" "+" "´"
+                                          "q" "w" "e" "r" "t" "y" "u" "i" "o" "p" "å" "¨"
+                                          "a" "s" "d" "f" "g" "h" "j" "k" "l" "ö" "ä" "'"
+                                          "<" "z" "x" "c" "v" "b" "n" "m" "," "." "-"
+                                          "½" "!" "\"" "#" "¤" "%" "&" "/" "(" ")" "=" "?" "`"
+                                          "Q" "W" "E" "R" "T" "Y" "U" "I" "O" "P" "Å" "^"
+                                          "A" "S" "D" "F" "G" "H" "J" "K" "L" "Ö" "Ä" "*"
+                                          ">" "Z" "X" "C" "V" "B" "N" "M" ";" ":" "_"
+                                          "@" "£" "$" "€" "{" "[" "]" "}" "\\" "~" "|")) ;; TODO: space key
+(make-variable-buffer-local
+ (defvar b0h-jump-mode-search-string nil))
+(make-variable-buffer-local
+ (defvar b0h-jump-mode-matches nil))
+(make-variable-buffer-local
+ (defvar b0h-jump-mode-overlays nil))
+(make-variable-buffer-local
+ (defvar b0h-jump-mode-window-start nil))
+(make-variable-buffer-local
+ (defvar b0h-jump-mode-window-end nil))
+(make-variable-buffer-local
+ (defvar b0h-jump-mode-narrowing nil))
+(defun b0h-jump-mode-initialize ()
+  (make-local-variable 'b0h-jump-mode-search-string)
+  (make-local-variable 'b0h-jump-mode-matches)
+  (make-local-variable 'b0h-jump-mode-overlays)
+  (make-local-variable 'b0h-jump-mode-window-start)
+  (make-local-variable 'b0h-jump-mode-window-end)
+  (make-local-variable 'b0h-jump-mode-narrowing)
+  (setq b0h-jump-mode-search-string ""
+        b0h-jump-mode-matches (make-hash-table :test 'equal)
+        b0h-jump-mode-overlays nil
+        b0h-jump-mode-window-start (window-start)
+        b0h-jump-mode-window-end (window-end)
+        b0h-jump-mode-narrowing nil))
+(defun b0h-jump-mode-vacant-letters ()
+  (let ((table (make-hash-table :test 'equal)))
+    (mapc
+     (lambda (x) (puthash x t table))
+     b0h-jump-mode-input-chars)
+    (save-excursion
+      (let ((start b0h-jump-mode-window-start)
+            (end b0h-jump-mode-window-end))
+        (goto-char start)
+        (while (< (point) end)
+          (when (looking-at (regexp-quote b0h-jump-mode-search-string))
+            (save-excursion
+              (forward-char (length b0h-jump-mode-search-string))
+              (puthash (make-string 1 (char-after)) nil table)))
+          (forward-char))))
+    table))
+(defun b0h-jump-mode-create-match-inputs (vacant-letter-map)
+  (let ((l nil))
+    (maphash (lambda (k v)
+               (when v
+                 (mapc (lambda (x)
+                         (push (list k x) l))
+                       b0h-jump-mode-input-chars)))
+             vacant-letter-map)
+    l))
+(defun b0h-jump-mode-push-match (match-input position)
+  (let* ((first (nth 0 match-input))
+         (second (nth 1 match-input))
+         (first-table
+          (if (gethash first b0h-jump-mode-matches)
+              (gethash first b0h-jump-mode-matches)
+            (puthash first (make-hash-table :test 'equal) b0h-jump-mode-matches)
+            (gethash first b0h-jump-mode-matches))))
+    (puthash second position first-table)))
+(defun b0h-jump-mode-populate-overlays-and-matches (match-inputs)
+  (save-excursion
+    (let ((start b0h-jump-mode-window-start)
+          (end b0h-jump-mode-window-end))
+      (goto-char start)
+      (while (< (point) end)
+        (when (looking-at (regexp-quote b0h-jump-mode-search-string))
+          (let ((overlay (make-overlay (point) (+ (point) 2)))
+                (match-input (pop match-inputs)))
+            (when match-input
+              (b0h-jump-mode-push-match match-input (point))
+              (let ((match-input-string (concat (nth 0 match-input) (nth 1 match-input))))
+                (overlay-put overlay 'display match-input-string)
+                (overlay-put overlay 'face '((t (:background "#363636") (:foreground "#FF6363"))))
+                (push overlay b0h-jump-mode-overlays)))))
+        (forward-char)))))
+(defun b0h-jump-mode-clear-overlays ()
+  (while b0h-jump-mode-overlays
+    (let ((overlay (pop b0h-jump-mode-overlays)))
+      (delete-overlay overlay))))
+(defun b0h-jump-mode-clear-matches ()
+  (clrhash b0h-jump-mode-matches))
+(defun b0h-jump-mode-finish ()
+  (b0h-jump-mode-clear-overlays)
+  (b0h-jump-mode 0))
+(defun b0h-jump-mode-self-insert ()
+  (interactive)
+  (let* ((input (make-string 1 last-command-event))
+         (match-entry (gethash input b0h-jump-mode-matches)))
+    (if b0h-jump-mode-narrowing
+        (when match-entry
+          (goto-char match-entry)
+          (b0h-jump-mode-finish))
+      (if match-entry
+          (progn
+            (setq b0h-jump-mode-narrowing t)
+            (setq b0h-jump-mode-matches match-entry))
+        (setq b0h-jump-mode-search-string (concat b0h-jump-mode-search-string input))
+        (message "Search string: %s" b0h-jump-mode-search-string)
+        (b0h-jump-mode-clear-overlays)
+        (b0h-jump-mode-clear-matches)
+        (b0h-jump-mode-populate-overlays-and-matches (b0h-jump-mode-create-match-inputs (b0h-jump-mode-vacant-letters)))))))
+(defun b0h-jump-mode-cancel ()
+  (interactive)
+  (b0h-jump-mode-finish)
+  (signal 'quit nil))
+(define-minor-mode b0h-jump-mode "Mode for jumping around"
+  :lighter " jump"
+  :keymap (let ((keybindings (make-sparse-keymap)))
+            (mapc (lambda (key)
+                    (define-key keybindings (kbd key) 'b0h-jump-mode-self-insert))
+                  b0h-jump-mode-self-insert-keys)
+            (define-key keybindings (kbd "C-g") 'b0h-jump-mode-cancel)
+            keybindings)
+  (b0h-jump-mode-initialize))
+(keyboard-translate ?\C-i ?\H-i)
+(global-set-key [?\H-i] 'b0h-jump-mode)
