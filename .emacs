@@ -233,7 +233,7 @@
                                           "Q" "W" "E" "R" "T" "Y" "U" "I" "O" "P" "Å" "^"
                                           "A" "S" "D" "F" "G" "H" "J" "K" "L" "Ö" "Ä" "*"
                                           ">" "Z" "X" "C" "V" "B" "N" "M" ";" ":" "_"
-                                          "@" "£" "$" "€" "{" "[" "]" "}" "\\" "~" "|")) ;; TODO: space key
+                                          "@" "£" "$" "€" "{" "[" "]" "}" "\\" "~" "|"))
 (make-variable-buffer-local
  (defvar b0h-jump-mode-search-string nil))
 (make-variable-buffer-local
@@ -259,6 +259,11 @@
         b0h-jump-mode-window-start (window-start)
         b0h-jump-mode-window-end (window-end)
         b0h-jump-mode-narrowing nil))
+(defun b0h-jump-mode-forward-char ()
+  (if (/= (point) (point-at-eol))
+      (forward-char)
+    (next-line)
+    (move-beginning-of-line nil)))
 (defun b0h-jump-mode-vacant-letters ()
   (let ((table (make-hash-table :test 'equal)))
     (mapc
@@ -272,8 +277,8 @@
           (when (looking-at (regexp-quote b0h-jump-mode-search-string))
             (save-excursion
               (forward-char (length b0h-jump-mode-search-string))
-              (puthash (make-string 1 (char-after)) nil table)))
-          (forward-char))))
+              (puthash (downcase (make-string 1 (char-after))) nil table)))
+          (b0h-jump-mode-forward-char))))
     table))
 (defun b0h-jump-mode-create-match-inputs (vacant-letter-map)
   (let ((l nil))
@@ -308,7 +313,7 @@
                 (overlay-put overlay 'display match-input-string)
                 (overlay-put overlay 'face '((t (:background "#363636") (:foreground "#FF6363"))))
                 (push overlay b0h-jump-mode-overlays)))))
-        (forward-char)))))
+        (b0h-jump-mode-forward-char)))))
 (defun b0h-jump-mode-clear-overlays ()
   (while b0h-jump-mode-overlays
     (let ((overlay (pop b0h-jump-mode-overlays)))
@@ -318,9 +323,22 @@
 (defun b0h-jump-mode-finish ()
   (b0h-jump-mode-clear-overlays)
   (b0h-jump-mode 0))
+(defun b0h-jump-mode-narrow-overlays (input)
+  (let ((iter (car b0h-jump-mode-overlays))
+        (rest (cdr b0h-jump-mode-overlays)))
+    (while iter
+      (let ((str (overlay-get iter 'display)))
+        (if (string-prefix-p input str t)
+            (progn
+              (move-overlay iter (overlay-start iter) (1- (overlay-end iter)))
+              (overlay-put iter 'display (substring str 1)))
+          (move-overlay iter (overlay-start iter) (overlay-start iter))
+          (overlay-put iter 'display nil)))
+      (setq iter (car rest)
+            rest (cdr rest)))))
 (defun b0h-jump-mode-self-insert ()
   (interactive)
-  (let* ((input (make-string 1 last-command-event))
+  (let* ((input (downcase (make-string 1 last-command-event)))
          (match-entry (gethash input b0h-jump-mode-matches)))
     (if b0h-jump-mode-narrowing
         (when match-entry
@@ -328,6 +346,7 @@
           (b0h-jump-mode-finish))
       (if match-entry
           (progn
+            (b0h-jump-mode-narrow-overlays input)
             (setq b0h-jump-mode-narrowing t)
             (setq b0h-jump-mode-matches match-entry))
         (setq b0h-jump-mode-search-string (concat b0h-jump-mode-search-string input))
@@ -345,8 +364,10 @@
             (mapc (lambda (key)
                     (define-key keybindings (kbd key) 'b0h-jump-mode-self-insert))
                   b0h-jump-mode-self-insert-keys)
+            (define-key keybindings (kbd "SPC") 'b0h-jump-mode-self-insert)
             (define-key keybindings (kbd "C-g") 'b0h-jump-mode-cancel)
             keybindings)
   (b0h-jump-mode-initialize))
 (keyboard-translate ?\C-i ?\H-i)
 (global-set-key [?\H-i] 'b0h-jump-mode)
+(define-key isearch-mode-map (kbd "C-l") (lambda () (interactive) (recenter-top-bottom) (isearch-update)))
