@@ -262,7 +262,12 @@
 (defun b0h-jump-mode-forward-char ()
   (if (/= (point) (point-at-eol))
       (forward-char)
-    (next-line)
+    (let ((prev-point (point)))
+      (next-line)
+      (when (<= (point) prev-point)
+        ;; some bug makes next-line not move point forward at all from time to time
+        (goto-char prev-point)
+        (forward-char)))
     (move-beginning-of-line nil)))
 (defun b0h-jump-mode-vacant-letters ()
   (let ((table (make-hash-table :test 'equal)))
