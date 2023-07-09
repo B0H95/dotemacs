@@ -128,6 +128,8 @@
 (global-set-key (kbd "C-o") 'other-window)
 (define-key occur-mode-map (kbd "C-o") 'other-window)
 (define-key occur-mode-map (kbd "M-o") 'occur-mode-display-occurrence)
+(define-key occur-edit-mode-map (kbd "C-o") 'other-window)
+(define-key occur-edit-mode-map (kbd "M-o") 'occur-mode-display-occurrence)
 (setq column-number-mode t)
 (defun b0h-delete-line ()
   (interactive)
