@@ -126,6 +126,8 @@
 ;; (global-hl-line-mode 1)
 ;; (set-face-background hl-line-face "#F0F0C9")
 (global-set-key (kbd "C-o") 'other-window)
+(define-key occur-mode-map (kbd "C-o") 'other-window)
+(define-key occur-mode-map (kbd "M-o") 'occur-mode-display-occurrence)
 (setq column-number-mode t)
 (defun b0h-delete-line ()
   (interactive)
