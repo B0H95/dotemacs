@@ -130,6 +130,9 @@
 (define-key occur-mode-map (kbd "M-o") 'occur-mode-display-occurrence)
 (define-key occur-edit-mode-map (kbd "C-o") 'other-window)
 (define-key occur-edit-mode-map (kbd "M-o") 'occur-mode-display-occurrence)
+(eval-after-load "dired" '(progn
+                            (define-key dired-mode-map (kbd "C-o") 'other-window)
+                            (define-key dired-mode-map (kbd "M-o") 'dired-display-file)))
 (setq column-number-mode t)
 (defun b0h-delete-line ()
   (interactive)
