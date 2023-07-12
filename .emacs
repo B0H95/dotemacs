@@ -125,14 +125,7 @@
 ;;       that stops hl-line-mode from overriding highlights
 ;; (global-hl-line-mode 1)
 ;; (set-face-background hl-line-face "#F0F0C9")
-(global-set-key (kbd "C-o") 'other-window)
-(define-key occur-mode-map (kbd "C-o") 'other-window)
-(define-key occur-mode-map (kbd "M-o") 'occur-mode-display-occurrence)
-(define-key occur-edit-mode-map (kbd "C-o") 'other-window)
-(define-key occur-edit-mode-map (kbd "M-o") 'occur-mode-display-occurrence)
-(eval-after-load "dired" '(progn
-                            (define-key dired-mode-map (kbd "C-o") 'other-window)
-                            (define-key dired-mode-map (kbd "M-o") 'dired-display-file)))
+(global-set-key (kbd "M-o") 'other-window)
 (setq column-number-mode t)
 (defun b0h-delete-line ()
   (interactive)
@@ -383,3 +376,6 @@
 (keyboard-translate ?\C-i ?\H-i)
 (global-set-key [?\H-i] 'b0h-jump-mode)
 (define-key isearch-mode-map (kbd "C-l") (lambda () (interactive) (recenter-top-bottom) (isearch-update)))
+(fset 'yes-or-no-p 'y-or-n-p)
+(setq dabbrev-case-fold-search nil)
+(global-set-key (kbd "C-w") (lambda () (interactive) (when mark-active (call-interactively 'kill-region))))
