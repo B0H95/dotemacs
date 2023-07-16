@@ -198,20 +198,39 @@
           (goto-line line)
           (recenter-top-bottom)))))
 (global-set-key (kbd "C-x m") 'b0h-find-file-at-point-with-line)
-(defun b0h-isearch-forward-symbol-at-point ()
-  (interactive)
+(make-variable-buffer-local
+ (defvar b0h-isearch-indent-steps nil))
+(defun b0h-isearch-indented-symbol-regexp (string &optional lax)
+  (format "^[[:blank:]]\\{%d\\}\\(%s\\_>\\|[^[:blank:]\r\n].*?\\_<%s\\_>\\).*?$" b0h-isearch-indent-steps string string))
+(defun b0h-isearch-forward-symbol-at-point (arg)
+  (interactive "P")
   (let ((default-case-fold-search case-fold-search))
     (setq case-fold-search nil)
     (isearch-forward-symbol-at-point)
+    (when (numberp arg)
+      (setq b0h-isearch-indent-steps arg
+            isearch-regexp-function 'b0h-isearch-indented-symbol-regexp)
+      (beginning-of-buffer)
+      (isearch-repeat-forward))
     (setq case-fold-search default-case-fold-search)))
-(defun b0h-isearch-mode-search-for-symbol-at-point ()
-  (interactive)
+(defun b0h-isearch-mode-search-for-symbol-at-point (arg)
+  (interactive "P")
   (when (symbol-at-point)
-    (setq isearch-string (symbol-name (symbol-at-point))
-          isearch-regexp-function 'isearch-symbol-regexp
-          isearch-case-fold-search nil
-          isearch-message isearch-string)
-    (isearch-update)))
+    (setq isearch-string (symbol-name (symbol-at-point)))
+    (if (numberp arg)
+        (progn
+          (setq b0h-isearch-indent-steps arg
+                isearch-regexp-function 'b0h-isearch-indented-symbol-regexp
+                isearch-regexp nil
+                isearch-case-fold-search nil
+                isearch-message isearch-string)
+          (beginning-of-buffer)
+          (isearch-repeat-forward))
+      (setq isearch-regexp-function 'isearch-symbol-regexp
+            isearch-regexp nil
+            isearch-case-fold-search nil
+            isearch-message isearch-string)
+      (isearch-update))))
 (keyboard-translate ?\C-m ?\H-m)
 (global-set-key [?\H-m] 'b0h-isearch-forward-symbol-at-point)
 (define-key isearch-mode-map [?\H-m] 'b0h-isearch-mode-search-for-symbol-at-point)
@@ -223,17 +242,6 @@
                                      "q" "w" "e" "r" "t" "y" "u" "i" "o" "p"
                                      "a" "s" "d" "f" "g" "h" "j" "k" "l"
                                      "z" "x" "c" "v" "b" "n" "m"))
-;; TODO: generate this list (see how global-map is created)
-(defconst b0h-jump-mode-self-insert-keys (list
-                                          "§" "1" "2" "3" "4" "5" "6" "7" "8" "9" "0" "+" "´"
-                                          "q" "w" "e" "r" "t" "y" "u" "i" "o" "p" "å" "¨"
-                                          "a" "s" "d" "f" "g" "h" "j" "k" "l" "ö" "ä" "'"
-                                          "<" "z" "x" "c" "v" "b" "n" "m" "," "." "-"
-                                          "½" "!" "\"" "#" "¤" "%" "&" "/" "(" ")" "=" "?" "`"
-                                          "Q" "W" "E" "R" "T" "Y" "U" "I" "O" "P" "Å" "^"
-                                          "A" "S" "D" "F" "G" "H" "J" "K" "L" "Ö" "Ä" "*"
-                                          ">" "Z" "X" "C" "V" "B" "N" "M" ";" ":" "_"
-                                          "@" "£" "$" "€" "{" "[" "]" "}" "\\" "~" "|"))
 (make-variable-buffer-local
  (defvar b0h-jump-mode-search-string nil))
 (make-variable-buffer-local
@@ -363,15 +371,21 @@
   (interactive)
   (b0h-jump-mode-finish)
   (signal 'quit nil))
+(defvar b0h-jump-mode-map
+  (let ((i 0)
+        (map (make-keymap)))
+    ;; inspired by isearch-mode-map
+    (set-char-table-range (nth 1 map) (cons #x100 (max-char))
+			  'b0h-jump-mode-self-insert)
+    (setq i ?\s)
+    (while (< i 256)
+      (define-key map (vector i) 'b0h-jump-mode-self-insert)
+      (setq i (1+ i)))
+    (define-key map (kbd "C-g") 'b0h-jump-mode-cancel)
+    map))
 (define-minor-mode b0h-jump-mode "Mode for jumping around"
   :lighter " jump"
-  :keymap (let ((keybindings (make-sparse-keymap)))
-            (mapc (lambda (key)
-                    (define-key keybindings (kbd key) 'b0h-jump-mode-self-insert))
-                  b0h-jump-mode-self-insert-keys)
-            (define-key keybindings (kbd "SPC") 'b0h-jump-mode-self-insert)
-            (define-key keybindings (kbd "C-g") 'b0h-jump-mode-cancel)
-            keybindings)
+  :keymap b0h-jump-mode-map
   (b0h-jump-mode-initialize))
 (keyboard-translate ?\C-i ?\H-i)
 (global-set-key [?\H-i] 'b0h-jump-mode)
