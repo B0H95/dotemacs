@@ -116,6 +116,9 @@
             (define-key key-translation-map (kbd "TAB") (kbd "M-/"))
             (define-key key-translation-map (kbd "M-/") (kbd "TAB"))
             (define-key key-translation-map (kbd "C-z") (kbd "TAB"))))
+(eval-after-load "shell" '(progn
+                            (define-key shell-mode-map (kbd "TAB") 'dabbrev-expand)
+                            (define-key shell-mode-map (kbd "M-/") 'completion-at-point)))
 (setq isearch-lazy-count t)
 (fido-mode 1)
 (fido-vertical-mode 1)
@@ -201,13 +204,19 @@
 (make-variable-buffer-local
  (defvar b0h-isearch-indent-steps nil))
 (defun b0h-isearch-indented-symbol-regexp (string &optional lax)
-  (format "^[[:blank:]]\\{%d\\}\\(%s\\_>\\|[^[:blank:]\r\n].*?\\_<%s\\_>\\).*?$" b0h-isearch-indent-steps string string))
+  (format
+   (concat "^[[:blank:]]\\{%d" (if (natnump b0h-isearch-indent-steps) "" ",") "\\}\\(%s\\_>\\|[^[:blank:]\r\n].*?\\_<%s\\_>\\).*?$")
+   (abs b0h-isearch-indent-steps) (regexp-quote string) (regexp-quote string)))
+(defun b0h-isearch-indented-line-regexp (string &optional lax)
+  (format
+   (concat "^[[:blank:]]\\{%d" (if (natnump b0h-isearch-indent-steps) "" ",") "\\}\\(%s\\|[^[:blank:]\r\n].*?%s\\).*?$")
+   (abs b0h-isearch-indent-steps) (regexp-quote string) (regexp-quote string)))
 (defun b0h-isearch-forward-symbol-at-point (arg)
   (interactive "P")
   (let ((default-case-fold-search case-fold-search))
     (setq case-fold-search nil)
     (isearch-forward-symbol-at-point)
-    (when (numberp arg)
+    (when (integerp arg)
       (setq b0h-isearch-indent-steps arg
             isearch-regexp-function 'b0h-isearch-indented-symbol-regexp)
       (beginning-of-buffer)
@@ -217,7 +226,7 @@
   (interactive "P")
   (when (symbol-at-point)
     (setq isearch-string (symbol-name (symbol-at-point)))
-    (if (numberp arg)
+    (if (integerp arg)
         (progn
           (setq b0h-isearch-indent-steps arg
                 isearch-regexp-function 'b0h-isearch-indented-symbol-regexp
@@ -234,14 +243,30 @@
 (keyboard-translate ?\C-m ?\H-m)
 (global-set-key [?\H-m] 'b0h-isearch-forward-symbol-at-point)
 (define-key isearch-mode-map [?\H-m] 'b0h-isearch-mode-search-for-symbol-at-point)
+(defun b0h-isearch-forward-indented-line (arg)
+  (interactive "P")
+  (when (integerp arg)
+    (isearch-mode t)
+    (setq b0h-isearch-indent-steps arg
+          isearch-regexp-function 'b0h-isearch-indented-line-regexp)
+    (beginning-of-buffer)))
+(defun b0h-isearch-mode-toggle-indented-line (arg)
+  (interactive "P")
+  (when (integerp arg)
+    (setq b0h-isearch-indent-steps arg
+          isearch-regexp-function 'b0h-isearch-indented-line-regexp
+          isearch-regexp nil)
+    (isearch-update)))
+(global-set-key (kbd "M-s l") 'b0h-isearch-forward-indented-line)
+(define-key isearch-mode-map (kbd "M-s l") 'b0h-isearch-mode-toggle-indented-line)
 (global-subword-mode 1)
 (setq kill-buffer-query-functions (delq 'process-kill-buffer-query-function kill-buffer-query-functions))
 (global-set-key (kbd "M-ä") 'forward-paragraph)
 (global-set-key (kbd "M-ö") 'backward-paragraph)
 (defconst b0h-jump-mode-input-chars (list
-                                     "q" "w" "e" "r" "t" "y" "u" "i" "o" "p"
-                                     "a" "s" "d" "f" "g" "h" "j" "k" "l"
-                                     "z" "x" "c" "v" "b" "n" "m"))
+                                     "g" "x" "n" "h" "t" "y" "b" "z" "u" "r"
+                                     "q" "p" "c" "v" "m" "a" "s" "l" "d"
+                                     "k" "w" "o" "e" "i" "f" "j"))
 (make-variable-buffer-local
  (defvar b0h-jump-mode-search-string nil))
 (make-variable-buffer-local
@@ -318,14 +343,14 @@
       (goto-char start)
       (while (< (point) end)
         (when (looking-at (regexp-quote b0h-jump-mode-search-string))
-          (let ((overlay (make-overlay (point) (+ (point) 2)))
-                (match-input (pop match-inputs)))
+          (let ((match-input (pop match-inputs)))
             (when match-input
-              (b0h-jump-mode-push-match match-input (point))
-              (let ((match-input-string (concat (nth 0 match-input) (nth 1 match-input))))
-                (overlay-put overlay 'display match-input-string)
-                (overlay-put overlay 'face '((t (:background "#363636") (:foreground "#FF6363"))))
-                (push overlay b0h-jump-mode-overlays)))))
+              (let ((overlay (make-overlay (point) (+ (point) 2))))
+                (b0h-jump-mode-push-match match-input (point))
+                (let ((match-input-string (concat (nth 0 match-input) (nth 1 match-input))))
+                  (overlay-put overlay 'display match-input-string)
+                  (overlay-put overlay 'face '((t (:background "#9CFFAF") (:foreground "#000000"))))
+                  (push overlay b0h-jump-mode-overlays))))))
         (b0h-jump-mode-forward-char)))))
 (defun b0h-jump-mode-clear-overlays ()
   (while b0h-jump-mode-overlays
@@ -393,3 +418,5 @@
 (fset 'yes-or-no-p 'y-or-n-p)
 (setq dabbrev-case-fold-search nil)
 (global-set-key (kbd "C-w") (lambda () (interactive) (when mark-active (call-interactively 'kill-region))))
+(setq dired-auto-revert-buffer t)
+(winner-mode 1)
