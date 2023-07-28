@@ -27,31 +27,56 @@
 (setq initial-scratch-message nil)
 (setq line-move-visual nil)
 (global-set-key (kbd "C-c p") 'find-lisp-find-dired)
-(defun b0h-conservative-window-split (&optional window)
-  (if (= (count-windows) 1)
-      (with-selected-window window (split-window-right))
-    (selected-window)))
-(setq split-window-preferred-function #'b0h-conservative-window-split)
-(setq b0h-saved-point-line nil)
-(setq b0h-saved-point-column nil)
-(defun b0h-save-point ()
+;; reference: https://emacs.stackexchange.com/questions/21651
+(defun b0h-preferred-window-split (&optional window)
+  (cond
+   ((and (> (window-pixel-width window)
+            (window-pixel-height window))
+         (window-splittable-p window 'horizontal))
+    (with-selected-window window
+      (split-window-right)))
+   ((window-splittable-p window)
+    (with-selected-window window
+      (split-window-below)))))
+(setq split-window-preferred-function #'b0h-preferred-window-split)
+(setq split-width-threshold 80)
+(setq split-height-threshold 40)
+(setq b0h-saved-visible-window-attributes nil)
+(defun b0h-set-window-start-by-line (window line) ;; line=1 => first line
+  (let ((p nil))
+    (with-selected-window window
+      (save-excursion
+        (beginning-of-buffer)
+        (forward-line (1- line))
+        (beginning-of-line)
+        (setq p (point))))
+    (set-window-start window p)))
+(defun b0h-save-visible-window-attributes ()
   (interactive)
-  (progn
-    (setq b0h-saved-point-line (- (line-number-at-pos) 1))
-    (setq b0h-saved-point-column (- (point) (line-beginning-position)))))
-(defun b0h-load-point ()
+  (setq b0h-saved-visible-window-attributes
+        (mapcar (lambda (w)
+                  (with-selected-window w
+                    (list
+                     w
+                     (1- (line-number-at-pos))
+                     (- (point) (line-beginning-position))
+                     (line-number-at-pos (window-start)))))
+                (seq-filter (lambda (w) (eq (window-buffer (selected-window)) (window-buffer w))) (window-list)))))
+(defun b0h-load-visible-window-attributes ()
   (interactive)
-  (if b0h-saved-point-line
-      (if b0h-saved-point-column
-          (progn
-            (goto-char (point-min))
-            (ignore-errors (forward-line b0h-saved-point-line))
-            (ignore-errors (forward-char b0h-saved-point-column))
-            (if (/= b0h-saved-point-line (- (line-number-at-pos) 1))
-                (progn
-                  (goto-char (point-min))
-                  (ignore-errors (forward-line b0h-saved-point-line))
-                  (move-end-of-line nil)))))))
+  (when (and b0h-saved-visible-window-attributes)
+    (mapc (lambda (attrs)
+            (with-selected-window (nth 0 attrs)
+              (b0h-set-window-start-by-line (selected-window) (nth 3 attrs))
+              (goto-char (point-min))
+              (ignore-errors (forward-line (nth 1 attrs)))
+              (ignore-errors (forward-char (nth 2 attrs)))
+              (if (/= (nth 1 attrs) (1- (line-number-at-pos)))
+                  (progn
+                    (goto-char (point-min))
+                    (ignore-errors (forward-line (nth 1 attrs)))
+                    (move-end-of-line nil)))))
+          b0h-saved-visible-window-attributes)))
 (setq hi-lock-auto-select-face nil) ;; variable doesn't exist by default
 (defun b0h-toggle-highlight-at-point ()
   (interactive)
@@ -59,10 +84,8 @@
   (if (not (boundp 'b0h-highlights))
       (setq b0h-highlights (make-hash-table :test 'equal)))
   (save-excursion
-    (let ((default-hi-lock-auto-select-face-value hi-lock-auto-select-face)
-          (default-case-fold-search-value case-fold-search))
-      (setq hi-lock-auto-select-face t)
-      (setq case-fold-search nil)
+    (let ((hi-lock-auto-select-face t)
+          (case-fold-search nil))
       (if (looking-at "[[:alnum:]_]")
           (progn
             (search-forward-regexp "\\_>")
@@ -75,9 +98,7 @@
                       (unhighlight-regexp symbol-regexp))
                   (progn
                     (puthash symbol-regexp t b0h-highlights)
-                    (highlight-regexp symbol-regexp (hi-lock-read-face-name))))))))
-      (setq hi-lock-auto-select-face default-hi-lock-auto-select-face-value)
-      (setq case-fold-search default-case-fold-search-value))))
+                    (highlight-regexp symbol-regexp (hi-lock-read-face-name)))))))))))
 (defun b0h-clear-all-highlights ()
   (interactive)
   (make-local-variable 'b0h-highlights)
@@ -91,34 +112,19 @@
 (global-set-key (kbd "M-t") 'b0h-clear-all-highlights)
 (global-set-key (kbd "C-v") 'b0h-scroll-down)
 (global-set-key (kbd "M-v") 'b0h-scroll-up)
-(setq b0h-saved-window-configuration nil)
-(defun b0h-toggle-window-maximized ()
-  (interactive)
-  (if b0h-saved-window-configuration
-      (let ((cur-window (selected-window)))
-        (set-window-configuration b0h-saved-window-configuration)
-        (select-window cur-window)
-        (setq b0h-saved-window-configuration nil))
-    (progn
-      (setq b0h-saved-window-configuration (current-window-configuration))
-      (maximize-window))))
-(global-set-key (kbd "C-j") 'b0h-toggle-window-maximized)
-(define-key key-translation-map (kbd "TAB") (kbd "M-/"))
-(define-key key-translation-map (kbd "M-/") (kbd "TAB"))
+(define-key key-translation-map (kbd "TAB") (kbd "C-M-/"))
 (define-key key-translation-map (kbd "C-z") (kbd "TAB"))
 (add-hook 'minibuffer-setup-hook
           (lambda ()
             (define-key key-translation-map (kbd "TAB") (kbd "TAB"))
-            (define-key key-translation-map (kbd "M-/") (kbd "M-/"))
-            (define-key key-translation-map (kbd "C-z") (kbd "M-/"))))
+            (define-key key-translation-map (kbd "C-z") (kbd "C-M-/"))))
 (add-hook 'minibuffer-exit-hook
           (lambda ()
-            (define-key key-translation-map (kbd "TAB") (kbd "M-/"))
-            (define-key key-translation-map (kbd "M-/") (kbd "TAB"))
+            (define-key key-translation-map (kbd "TAB") (kbd "C-M-/"))
             (define-key key-translation-map (kbd "C-z") (kbd "TAB"))))
 (eval-after-load "shell" '(progn
-                            (define-key shell-mode-map (kbd "TAB") 'dabbrev-expand)
-                            (define-key shell-mode-map (kbd "M-/") 'completion-at-point)))
+                            (define-key shell-mode-map (kbd "TAB") 'dabbrev-completion)
+                            (define-key shell-mode-map (kbd "C-M-/") 'completion-at-point)))
 (setq isearch-lazy-count t)
 (fido-mode 1)
 (fido-vertical-mode 1)
@@ -130,29 +136,12 @@
 ;; (set-face-background hl-line-face "#F0F0C9")
 (global-set-key (kbd "M-o") 'other-window)
 (setq column-number-mode t)
-(defun b0h-delete-line ()
-  (interactive)
-  (if (use-region-p)
-      (delete-region (region-beginning) (region-end))
-    (if (= (point) (point-at-eol))
-        (delete-char 1)
-      (delete-region (point) (line-end-position)))))
-(defun b0h-delete-word (arg)
-  (interactive "p")
-  (if (use-region-p)
-      (delete-region (region-beginning) (region-end))
-    (let ((next-point (point)))
-      (save-excursion
-        (forward-word arg)
-        (setq next-point (point)))
-      (delete-region (point) next-point))))
-(defun b0h-backward-delete-word (arg)
-  (interactive "p")
-  (b0h-delete-word (- arg)))
-(global-set-key (kbd "C-k") 'b0h-delete-line)
-(global-set-key (kbd "M-d") 'b0h-delete-word)
-(global-set-key (kbd "C-<backspace>") 'b0h-backward-delete-word)
-(global-set-key (kbd "M-DEL") 'b0h-backward-delete-word)
+(setq select-enable-clipboard nil)
+(global-set-key (kbd "M-å") 'clipboard-kill-region)
+(global-set-key (kbd "M-ä") 'clipboard-kill-ring-save)
+(global-set-key (kbd "M-ö") 'clipboard-yank)
+(global-set-key (kbd "C-ä") 'undo-only)
+(global-set-key (kbd "C-ö") 'undo-redo)
 (set-cursor-color "#F00279")
 (setq b0h-theme-text-color "SystemWindowText")
 (setq b0h-theme-keyword-color "#0022C9")
@@ -213,21 +202,20 @@
    (abs b0h-isearch-indent-steps) (regexp-quote string) (regexp-quote string)))
 (defun b0h-isearch-forward-symbol-at-point (arg)
   (interactive "P")
-  (let ((default-case-fold-search case-fold-search))
-    (setq case-fold-search nil)
+  (let ((case-fold-search nil))
     (isearch-forward-symbol-at-point)
     (when (integerp arg)
-      (setq b0h-isearch-indent-steps arg
-            isearch-regexp-function 'b0h-isearch-indented-symbol-regexp)
-      (beginning-of-buffer)
-      (isearch-repeat-forward))
-    (setq case-fold-search default-case-fold-search)))
+      (ignore-errors
+        (setq b0h-isearch-indent-steps arg
+              isearch-regexp-function 'b0h-isearch-indented-symbol-regexp)
+        (beginning-of-buffer)
+        (isearch-repeat-forward)))))
 (defun b0h-isearch-mode-search-for-symbol-at-point (arg)
   (interactive "P")
   (when (symbol-at-point)
     (setq isearch-string (symbol-name (symbol-at-point)))
     (if (integerp arg)
-        (progn
+        (ignore-errors
           (setq b0h-isearch-indent-steps arg
                 isearch-regexp-function 'b0h-isearch-indented-symbol-regexp
                 isearch-regexp nil
@@ -261,8 +249,6 @@
 (define-key isearch-mode-map (kbd "M-s l") 'b0h-isearch-mode-toggle-indented-line)
 (global-subword-mode 1)
 (setq kill-buffer-query-functions (delq 'process-kill-buffer-query-function kill-buffer-query-functions))
-(global-set-key (kbd "M-ä") 'forward-paragraph)
-(global-set-key (kbd "M-ö") 'backward-paragraph)
 (defconst b0h-jump-mode-input-chars (list
                                      "g" "x" "n" "h" "t" "y" "b" "z" "u" "r"
                                      "q" "p" "c" "v" "m" "a" "s" "l" "d"
@@ -315,7 +301,8 @@
           (when (looking-at (regexp-quote b0h-jump-mode-search-string))
             (save-excursion
               (forward-char (length b0h-jump-mode-search-string))
-              (puthash (downcase (make-string 1 (char-after))) nil table)))
+              (when (char-after)
+                (puthash (downcase (make-string 1 (char-after))) nil table))))
           (b0h-jump-mode-forward-char))))
     table))
 (defun b0h-jump-mode-create-match-inputs (vacant-letter-map)
@@ -420,3 +407,8 @@
 (global-set-key (kbd "C-w") (lambda () (interactive) (when mark-active (call-interactively 'kill-region))))
 (setq dired-auto-revert-buffer t)
 (winner-mode 1)
+(setq sentence-end-double-space nil)
+(put 'downcase-region 'disabled nil)
+(put 'upcase-region 'disabled nil)
+(put 'set-goal-column 'disabled nil)
+(setq dired-listing-switches "-lah")
