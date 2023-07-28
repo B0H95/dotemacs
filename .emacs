@@ -253,30 +253,19 @@
                                      "g" "x" "n" "h" "t" "y" "b" "z" "u" "r"
                                      "q" "p" "c" "v" "m" "a" "s" "l" "d"
                                      "k" "w" "o" "e" "i" "f" "j"))
-(make-variable-buffer-local
- (defvar b0h-jump-mode-search-string nil))
-(make-variable-buffer-local
- (defvar b0h-jump-mode-matches nil))
-(make-variable-buffer-local
- (defvar b0h-jump-mode-overlays nil))
-(make-variable-buffer-local
- (defvar b0h-jump-mode-window-start nil))
-(make-variable-buffer-local
- (defvar b0h-jump-mode-window-end nil))
-(make-variable-buffer-local
- (defvar b0h-jump-mode-narrowing nil))
+(defvar b0h-jump-mode-search-string nil)
+(defvar b0h-jump-mode-matches nil)
+(defvar b0h-jump-mode-overlays nil)
+(defvar b0h-jump-mode-window-attributes nil)
+(defvar b0h-jump-mode-narrowing nil)
 (defun b0h-jump-mode-initialize ()
-  (make-local-variable 'b0h-jump-mode-search-string)
-  (make-local-variable 'b0h-jump-mode-matches)
-  (make-local-variable 'b0h-jump-mode-overlays)
-  (make-local-variable 'b0h-jump-mode-window-start)
-  (make-local-variable 'b0h-jump-mode-window-end)
-  (make-local-variable 'b0h-jump-mode-narrowing)
   (setq b0h-jump-mode-search-string ""
         b0h-jump-mode-matches (make-hash-table :test 'equal)
         b0h-jump-mode-overlays nil
-        b0h-jump-mode-window-start (window-start)
-        b0h-jump-mode-window-end (window-end)
+        b0h-jump-mode-window-attributes (mapcar (lambda (w)
+                                                  (with-selected-window w
+                                                    (list w (window-start) (window-end))))
+                                                (window-list))
         b0h-jump-mode-narrowing nil))
 (defun b0h-jump-mode-forward-char ()
   (if (/= (point) (point-at-eol))
@@ -293,17 +282,20 @@
     (mapc
      (lambda (x) (puthash x t table))
      b0h-jump-mode-input-chars)
-    (save-excursion
-      (let ((start b0h-jump-mode-window-start)
-            (end b0h-jump-mode-window-end))
-        (goto-char start)
-        (while (< (point) end)
-          (when (looking-at (regexp-quote b0h-jump-mode-search-string))
-            (save-excursion
-              (forward-char (length b0h-jump-mode-search-string))
-              (when (char-after)
-                (puthash (downcase (make-string 1 (char-after))) nil table))))
-          (b0h-jump-mode-forward-char))))
+    (mapc (lambda (attrs)
+            (with-selected-window (nth 0 attrs)
+              (save-excursion
+                (let ((start (nth 1 attrs))
+                      (end (nth 2 attrs)))
+                  (goto-char start)
+                  (while (< (point) end)
+                    (when (looking-at (regexp-quote b0h-jump-mode-search-string))
+                      (save-excursion
+                        (forward-char (length b0h-jump-mode-search-string))
+                        (when (char-after)
+                          (puthash (downcase (make-string 1 (char-after))) nil table))))
+                    (b0h-jump-mode-forward-char))))))
+          b0h-jump-mode-window-attributes)
     table))
 (defun b0h-jump-mode-create-match-inputs (vacant-letter-map)
   (let ((l nil))
@@ -314,7 +306,7 @@
                        b0h-jump-mode-input-chars)))
              vacant-letter-map)
     l))
-(defun b0h-jump-mode-push-match (match-input position)
+(defun b0h-jump-mode-push-match (match-input position window)
   (let* ((first (nth 0 match-input))
          (second (nth 1 match-input))
          (first-table
@@ -322,23 +314,32 @@
               (gethash first b0h-jump-mode-matches)
             (puthash first (make-hash-table :test 'equal) b0h-jump-mode-matches)
             (gethash first b0h-jump-mode-matches))))
-    (puthash second position first-table)))
+    (puthash second (list position window) first-table)))
 (defun b0h-jump-mode-populate-overlays-and-matches (match-inputs)
-  (save-excursion
-    (let ((start b0h-jump-mode-window-start)
-          (end b0h-jump-mode-window-end))
-      (goto-char start)
-      (while (< (point) end)
-        (when (looking-at (regexp-quote b0h-jump-mode-search-string))
-          (let ((match-input (pop match-inputs)))
-            (when match-input
-              (let ((overlay (make-overlay (point) (+ (point) 2))))
-                (b0h-jump-mode-push-match match-input (point))
-                (let ((match-input-string (concat (nth 0 match-input) (nth 1 match-input))))
-                  (overlay-put overlay 'display match-input-string)
-                  (overlay-put overlay 'face '((t (:background "#9CFFAF") (:foreground "#000000"))))
-                  (push overlay b0h-jump-mode-overlays))))))
-        (b0h-jump-mode-forward-char)))))
+  (mapc (lambda (attrs)
+          (with-selected-window (nth 0 attrs)
+            (save-excursion
+              (let ((start (nth 1 attrs))
+                    (end (nth 2 attrs)))
+                (goto-char start)
+                (while (< (point) end)
+                  (when (looking-at (regexp-quote b0h-jump-mode-search-string))
+                    (let ((match-input (pop match-inputs)))
+                      (when match-input
+                        (let* ((overlay-start-pos (point))
+                               (overlay-end-pos (+ (point) 2))
+                               (overlay-partial-end-pos (1+ (point)))
+                               (complete-overlay (= (line-number-at-pos overlay-start-pos) (line-number-at-pos overlay-end-pos)))
+                               (overlay (make-overlay overlay-start-pos (if complete-overlay overlay-end-pos overlay-partial-end-pos))))
+                          (b0h-jump-mode-push-match match-input (point) (nth 0 attrs))
+                          (let ((match-input-string (concat (nth 0 match-input) (nth 1 match-input)))
+                                (partial-match-input-string (nth 0 match-input)))
+                            (overlay-put overlay 'display (if complete-overlay match-input-string partial-match-input-string))
+                            (overlay-put overlay 'face '((t (:background "#9CFFAF") (:foreground "#000000"))))
+                            (overlay-put overlay 'b0h-second-char (nth 1 match-input))
+                            (push overlay b0h-jump-mode-overlays))))))
+                  (b0h-jump-mode-forward-char))))))
+        b0h-jump-mode-window-attributes))
 (defun b0h-jump-mode-clear-overlays ()
   (while b0h-jump-mode-overlays
     (let ((overlay (pop b0h-jump-mode-overlays)))
@@ -347,14 +348,17 @@
   (clrhash b0h-jump-mode-matches))
 (defun b0h-jump-mode-finish ()
   (b0h-jump-mode-clear-overlays)
+  (b0h-jump-mode-clear-matches)
   (b0h-jump-mode 0))
 (defun b0h-jump-mode-narrow-overlays (input)
   (let ((iter (car b0h-jump-mode-overlays))
         (rest (cdr b0h-jump-mode-overlays)))
     (while iter
-      (let ((str (overlay-get iter 'display)))
+      (let ((str (overlay-get iter 'display))
+            (second-char (overlay-get iter 'b0h-second-char)))
         (if (string-prefix-p input str t)
-            (progn
+            (if (= (length str) 1)
+                (overlay-put iter 'display second-char)
               (move-overlay iter (overlay-start iter) (1- (overlay-end iter)))
               (overlay-put iter 'display (substring str 1)))
           (move-overlay iter (overlay-start iter) (overlay-start iter))
@@ -367,8 +371,9 @@
          (match-entry (gethash input b0h-jump-mode-matches)))
     (if b0h-jump-mode-narrowing
         (when match-entry
-          (goto-char match-entry)
-          (b0h-jump-mode-finish))
+          (b0h-jump-mode-finish)
+          (select-window (nth 1 match-entry))
+          (goto-char (nth 0 match-entry)))
       (if match-entry
           (progn
             (b0h-jump-mode-narrow-overlays input)
