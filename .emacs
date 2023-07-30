@@ -424,28 +424,69 @@
 (put 'upcase-region 'disabled nil)
 (put 'set-goal-column 'disabled nil)
 (setq dired-listing-switches "-lah")
-(defun b0h-do-file-search (dir pattern str)
-  (let ((result-buf (get-buffer-create "*File Search*"))
+(defun b0h-do-file-search-process-file (dir file str search-fn result-buf)
+  (let ((prev-linum 0))
+    (while (funcall search-fn str nil t)
+      (let ((linum (line-number-at-pos))
+            (line (thing-at-point 'line t)))
+        (when (/= linum prev-linum)
+          (with-current-buffer result-buf
+            (insert (format "%s:%s:%s" (string-remove-prefix dir file) linum line))))
+        (setq prev-linum linum)))))
+(defun b0h-do-file-search (dir pattern str case-insensitive enable-regexp)
+  (let ((case-fold-search case-insensitive)
+        (search-fn (if enable-regexp 're-search-forward 'search-forward))
+        (syntax (syntax-table))
+        (result-buf (get-buffer-create "*File Search*"))
         (files (directory-files-recursively dir pattern)))
     (with-current-buffer result-buf
+      (read-only-mode 0)
       (erase-buffer)
       (cd dir))
     (dolist (file files)
-      ;; TODO: check if buffer exists for file
-      (let ((prev-linum 0))
-        (with-temp-buffer
-          (insert-file-contents file)
-          ;; TODO: syntax table should match starting buffer
-          (while (search-forward str nil t)
-            (let ((linum (line-number-at-pos))
-                  (line (thing-at-point 'line t)))
-              (when (/= linum prev-linum)
-                (with-current-buffer result-buf
-                  (insert (format "%s:%s:%s" (string-remove-prefix dir file) linum line))))
-              (setq prev-linum linum))))))
+      ;; reference: https://emacs.stackexchange.com/a/2898
+      (let ((file-buffer (get-file-buffer file)))
+        (if file-buffer
+            (with-current-buffer file-buffer
+              (save-excursion
+                (goto-char (point-min))
+                (b0h-do-file-search-process-file dir file str search-fn result-buf)))
+          (with-temp-buffer
+            (insert-file-contents file)
+            (set-syntax-table syntax)
+            (b0h-do-file-search-process-file dir file str search-fn result-buf)))))
     (with-current-buffer result-buf
-      (beginning-of-buffer))
-    (display-buffer result-buf)))
+      (grep-mode)) ;; TODO: custom mode
+    (display-buffer result-buf)
+    (with-selected-window (get-buffer-window result-buf)
+      (goto-char (point-min)))))
+(defun b0h-file-search-basic-arguments (case-insensitive enable-regexp)
+  (let ((title (concat "Search " (if enable-regexp "regexp" "string") (if case-insensitive "" " (case-sensitive)"))))
+    (list
+     (read-directory-name "Search in directory: ")
+     (read-string "With file regexp: "
+                  (let* ((file (buffer-file-name))
+                         (ext (if file (file-name-extension file) nil)))
+                    (if ext
+                        (concat "\\." ext "$")
+                      "")))
+     (let ((result (read-string (concat title ": "))))
+       (while (= (length result) 0)
+         (setq result (read-string (concat title " (please type a string): "))))
+       result))))
 (defun b0h-file-search (dir pattern str)
-  (interactive "DDirectory: \nsFile regexp: \nsSearch string: ")
-  (b0h-do-file-search dir pattern str))
+  (interactive (b0h-file-search-basic-arguments t nil))
+  (b0h-do-file-search dir pattern str t nil))
+(defun b0h-file-search-case-sensitive (dir pattern str)
+  (interactive (b0h-file-search-basic-arguments nil nil))
+  (b0h-do-file-search dir pattern str nil nil))
+(defun b0h-file-search-regexp (dir pattern str)
+  (interactive (b0h-file-search-basic-arguments t t))
+  (b0h-do-file-search dir pattern str t t))
+(defun b0h-file-search-regexp-case-sensitive (dir pattern str)
+  (interactive (b0h-file-search-basic-arguments nil t))
+  (b0h-do-file-search dir pattern str nil t))
+(global-set-key (kbd "C-c o") 'b0h-file-search)
+(global-set-key (kbd "C-c O") 'b0h-file-search-case-sensitive)
+(global-set-key (kbd "C-c l") 'b0h-file-search-regexp)
+(global-set-key (kbd "C-c L") 'b0h-file-search-regexp-case-sensitive)
