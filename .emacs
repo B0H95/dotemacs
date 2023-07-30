@@ -266,7 +266,8 @@
                                                   (with-selected-window w
                                                     (list w (window-start) (window-end))))
                                                 (window-list))
-        b0h-jump-mode-narrowing nil))
+        b0h-jump-mode-narrowing nil)
+  (add-hook 'pre-command-hook 'b0h-jump-mode-pre-command-hook))
 (defun b0h-jump-mode-forward-char ()
   (if (/= (point) (point-at-eol))
       (forward-char)
@@ -347,6 +348,7 @@
 (defun b0h-jump-mode-clear-matches ()
   (clrhash b0h-jump-mode-matches))
 (defun b0h-jump-mode-finish ()
+  (remove-hook 'pre-command-hook 'b0h-jump-mode-pre-command-hook)
   (b0h-jump-mode-clear-overlays)
   (b0h-jump-mode-clear-matches)
   (b0h-jump-mode 0))
@@ -400,6 +402,11 @@
       (setq i (1+ i)))
     (define-key map (kbd "C-g") 'b0h-jump-mode-cancel)
     map))
+(defun b0h-jump-mode-pre-command-hook ()
+  (let ((key (this-single-command-keys)))
+    (cond
+     ((commandp (lookup-key b0h-jump-mode-map key)))
+     (t (b0h-jump-mode-finish)))))
 (define-minor-mode b0h-jump-mode "Mode for jumping around"
   :lighter " jump"
   :keymap b0h-jump-mode-map
@@ -417,3 +424,28 @@
 (put 'upcase-region 'disabled nil)
 (put 'set-goal-column 'disabled nil)
 (setq dired-listing-switches "-lah")
+(defun b0h-do-file-search (dir pattern str)
+  (let ((result-buf (get-buffer-create "*File Search*"))
+        (files (directory-files-recursively dir pattern)))
+    (with-current-buffer result-buf
+      (erase-buffer)
+      (cd dir))
+    (dolist (file files)
+      ;; TODO: check if buffer exists for file
+      (let ((prev-linum 0))
+        (with-temp-buffer
+          (insert-file-contents file)
+          ;; TODO: syntax table should match starting buffer
+          (while (search-forward str nil t)
+            (let ((linum (line-number-at-pos))
+                  (line (thing-at-point 'line t)))
+              (when (/= linum prev-linum)
+                (with-current-buffer result-buf
+                  (insert (format "%s:%s:%s" (string-remove-prefix dir file) linum line))))
+              (setq prev-linum linum))))))
+    (with-current-buffer result-buf
+      (beginning-of-buffer))
+    (display-buffer result-buf)))
+(defun b0h-file-search (dir pattern str)
+  (interactive "DDirectory: \nsFile regexp: \nsSearch string: ")
+  (b0h-do-file-search dir pattern str))
