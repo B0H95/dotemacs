@@ -86,19 +86,15 @@
   (save-excursion
     (let ((hi-lock-auto-select-face t)
           (case-fold-search nil))
-      (if (looking-at "[[:alnum:]_]")
-          (progn
-            (search-forward-regexp "\\_>")
-            (let ((end (point)))
-              (search-backward-regexp "\\_<")
-              (let ((symbol-regexp (concat "\\_<" (buffer-substring (point) end) "\\_>")))
-                (if (gethash symbol-regexp b0h-highlights)
-                    (progn
-                      (remhash symbol-regexp b0h-highlights)
-                      (unhighlight-regexp symbol-regexp))
-                  (progn
-                    (puthash symbol-regexp t b0h-highlights)
-                    (highlight-regexp symbol-regexp (hi-lock-read-face-name)))))))))))
+      (when (symbol-at-point)
+        (let ((sym (concat "\\_<" (symbol-name (symbol-at-point)) "\\_>")))
+          (if (gethash sym b0h-highlights)
+              (progn
+                (remhash sym b0h-highlights)
+                (unhighlight-regexp sym))
+            (progn
+              (puthash sym t b0h-highlights)
+              (highlight-regexp sym (hi-lock-read-face-name)))))))))
 (defun b0h-clear-all-highlights ()
   (interactive)
   (make-local-variable 'b0h-highlights)
@@ -130,8 +126,6 @@
 (fido-vertical-mode 1)
 (set-background-color "#FFFFD7")
 (blink-cursor-mode 0)
-;; TODO: re-add this when some new emacs version comes along
-;;       that stops hl-line-mode from overriding highlights
 ;; (global-hl-line-mode 1)
 ;; (set-face-background hl-line-face "#F0F0C9")
 (global-set-key (kbd "M-o") 'other-window)
