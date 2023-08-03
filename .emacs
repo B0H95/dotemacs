@@ -123,21 +123,14 @@
 (global-set-key (kbd "C-v") 'b0h-scroll-down)
 (global-set-key (kbd "M-v") 'b0h-scroll-up)
 (defun b0h-autocomplete-get-symbols (prefix)
-  (let ((excluded-point
-         (if (symbol-at-point)
-             (if (not (looking-at "\\_<"))
-                 (point)
-               (save-excursion
-                 (re-search-backward "\\_<")
-                 (point)))
-           nil)))
+  (let ((excluded-point (point)))
     (save-excursion
       (goto-char (point-min))
       (let ((s (concat "\\_<" (regexp-quote prefix)))
             (ret (make-hash-table :test 'equal))
             (manual-continue (= (length prefix) 0)))
         (while (re-search-forward s nil t)
-          (when (and (symbol-at-point) (or (not excluded-point) (/= excluded-point (point))))
+          (when (and (symbol-at-point) (/= excluded-point (point)))
             (puthash (symbol-name (symbol-at-point)) t ret))
           (when manual-continue
             (forward-char)))
@@ -151,15 +144,20 @@
           (when symbols
             (let* ((narrowed-prefix (try-completion prefix symbols))
                    (exact-completion (eq narrowed-prefix t))
-                   (result
-                    (if exact-completion
-                        (car symbols)
-                      (completing-read "Autocomplete: " symbols nil t narrowed-prefix)))
                    (cur-point (point)))
               (when (not exact-completion)
                 (re-search-backward "\\_<")
                 (delete-region (point) cur-point)
-                (insert result))))))
+                (insert narrowed-prefix)
+                (when (> (length symbols) 1)
+                  (let ((result
+                         (if exact-completion
+                             prefix
+                           (completing-read "Autocomplete: " symbols nil t narrowed-prefix)))
+                        (cur-point (point)))
+                    (re-search-backward "\\_<")
+                    (delete-region (point) cur-point)
+                    (insert result))))))))
     (let* ((symbols (b0h-autocomplete-get-symbols ""))
            (result (completing-read "Autocomplete: " symbols nil t)))
       (insert result))))
@@ -257,7 +255,8 @@
         (setq b0h-isearch-indent-steps arg
               isearch-regexp-function 'b0h-isearch-indented-symbol-regexp)
         (beginning-of-buffer)
-        (isearch-repeat-forward)))))
+        (isearch-repeat-forward)
+        (recenter-top-bottom)))))
 (defun b0h-isearch-mode-search-for-symbol-at-point (arg)
   (interactive "P")
   (when (symbol-at-point)
@@ -270,7 +269,8 @@
                 isearch-case-fold-search nil
                 isearch-message isearch-string)
           (beginning-of-buffer)
-          (isearch-repeat-forward))
+          (isearch-repeat-forward)
+          (recenter-top-bottom))
       (setq isearch-regexp-function 'isearch-symbol-regexp
             isearch-regexp nil
             isearch-case-fold-search nil
