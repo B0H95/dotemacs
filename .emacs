@@ -559,7 +559,7 @@
          (str-history (if enable-regexp 'b0h-file-search-regexp-argument-history 'b0h-file-search-str-argument-history))
          (str-arg (let ((result (read-string (concat title ": ") nil str-history)))
                     (while (= (length result) 0)
-                      (setq result (read-string (concat title " (please type a string): "))))
+                      (setq result (read-string (concat title " (please type a string): ") nil str-history)))
                     result)))
     (list dir-arg pattern-arg str-arg)))
 (defun b0h-file-search-isearch-arguments ()
