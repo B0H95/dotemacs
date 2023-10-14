@@ -660,3 +660,8 @@
 (global-set-key (kbd "C-o") 'b0h-open-line-and-indent)
 (setq create-lockfiles nil)
 (global-set-key (kbd "C-M-<backspace>") 'backward-kill-sexp)
+(setq cycle-spacing-actions '(delete-all-space just-one-space restore))
+(setq require-final-newline t)
+(set-charset-priority 'unicode)
+(prefer-coding-system 'utf-8-unix)
+(global-set-key (kbd "M-z") 'zap-up-to-char)
