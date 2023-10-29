@@ -253,6 +253,7 @@
 (set-face-attribute 'fringe nil :background b0h-theme-fringe-color)
 (eval-after-load "dired" '(set-face-attribute 'dired-directory nil :foreground b0h-theme-dired-directory-color))
 (eval-after-load "eglot" '(set-face-attribute 'eglot-highlight-symbol-face nil :background b0h-theme-lsp-symbol-highlight-color :weight 'normal))
+(eval-after-load "org" '(set-face-attribute 'org-code nil :family "Monospace Serif"))
 (setq confirm-kill-emacs #'yes-or-no-p)
 (global-set-key (kbd "C-x å") 'enlarge-window)
 (defun b0h-toggle-selective-display ()
