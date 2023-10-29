@@ -719,3 +719,4 @@
 (defun b0h-shell ()
   (interactive)
   (shell (concat "*shell " (format-time-string "%Y-%m-%d %H:%M:%S") "*")))
+(eval-after-load "sgml-mode" '(define-key html-mode-map (kbd "M-o") nil))
