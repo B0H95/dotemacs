@@ -721,3 +721,6 @@
   (interactive)
   (shell (concat "*shell " (format-time-string "%Y-%m-%d %H:%M:%S") "*")))
 (eval-after-load "sgml-mode" '(define-key html-mode-map (kbd "M-o") nil))
+(eval-after-load "diff-mode" '(progn
+                                (define-key diff-mode-map (kbd "M-o") nil)
+                                (define-key diff-mode-map (kbd "C-o") 'diff-goto-source)))
