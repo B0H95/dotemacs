@@ -583,9 +583,8 @@
             (b0h-do-file-search-process-file dir file str search-fn result-buf)))))
     (with-current-buffer result-buf
       (grep-mode)) ;; TODO: custom mode
-    (display-buffer result-buf)
-    (with-selected-window (get-buffer-window result-buf)
-      (goto-char (point-min)))))
+    (switch-to-buffer result-buf)
+    (goto-char (point-min))))
 (defun b0h-file-search-read-directory-argument ()
   (read-directory-name "Search in directory: "))
 (defun b0h-file-search-read-pattern-argument ()
@@ -713,3 +712,11 @@
 (eval-after-load "diff-mode" '(progn
                                 (define-key diff-mode-map (kbd "M-o") nil)
                                 (define-key diff-mode-map (kbd "C-o") 'diff-goto-source)))
+(defun b0h-compile-goto-error ()
+  (interactive)
+  (let ((display-buffer-overriding-action
+         '((display-buffer-reuse-window
+            display-buffer-same-window)
+           (inhibit-same-window . nil))))
+    (call-interactively #'compile-goto-error)))
+(eval-after-load "compile" '(define-key compilation-button-map (kbd "RET") 'b0h-compile-goto-error))
