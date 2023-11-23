@@ -539,7 +539,7 @@
 (define-key isearch-mode-map (kbd "C-l") (lambda () (interactive) (recenter-top-bottom) (isearch-update)))
 (fset 'yes-or-no-p 'y-or-n-p)
 (setq dabbrev-case-fold-search nil)
-(global-set-key (kbd "C-w") (lambda () (interactive) (when mark-active (call-interactively 'clipboard-kill-region))))
+(global-set-key (kbd "C-w") (lambda () (interactive) (when mark-active (call-interactively 'kill-region))))
 (setq dired-auto-revert-buffer t)
 (winner-mode 1)
 (setq sentence-end-double-space nil)
