@@ -10,9 +10,13 @@
 (setq b0h-dark-theme-region-color "#1A3817")
 (setq b0h-dark-theme-search-highlight-color "#7AA4FF")
 (setq b0h-dark-theme-mode-line-inactive-color "#3D5E20")
-(setq b0h-dark-theme-mode-line-active-color "#6E2722") ;; 8A352F
+(setq b0h-dark-theme-mode-line-active-color "#6E2722")
+(setq b0h-dark-theme-mode-line-inactive-text-color "#9CCB6C")
+(setq b0h-dark-theme-mode-line-active-text-color "#D88A83")
 (setq b0h-dark-theme-fringe-color "#202020")
 (setq b0h-dark-theme-dired-directory-color "#559C4E")
+(setq b0h-dark-theme-error-color "#FF0000")
+(setq b0h-dark-theme-paren-match-background "turquoise")
 
 (custom-theme-set-faces
  'b0h-dark
@@ -34,10 +38,11 @@
  `(font-lock-variable-name-face ((t (:foreground ,b0h-dark-theme-text-color))))
  `(region ((t (:background ,b0h-dark-theme-region-color))))
  `(lazy-highlight ((t (:background ,b0h-dark-theme-search-highlight-color :foreground ,b0h-dark-theme-background-color))))
- `(mode-line-inactive ((t (:inherit mode-line :background ,b0h-dark-theme-mode-line-inactive-color))))
- `(mode-line-active ((t (:inherit mode-line :background ,b0h-dark-theme-mode-line-active-color))))
+ `(mode-line-inactive ((t (:inherit mode-line :background ,b0h-dark-theme-mode-line-inactive-color :foreground ,b0h-dark-theme-mode-line-inactive-text-color))))
+ `(mode-line-active ((t (:inherit mode-line :background ,b0h-dark-theme-mode-line-active-color :foreground ,b0h-dark-theme-mode-line-active-text-color))))
  `(fringe ((t (:background ,b0h-dark-theme-fringe-color))))
  `(dired-directory ((t (:foreground ,b0h-dark-theme-dired-directory-color))))
- )
+ `(compilation-error ((t (:foreground ,b0h-dark-theme-error-color :weight bold))))
+ `(show-paren-match ((t (:foreground ,b0h-dark-theme-background-color :background ,b0h-dark-theme-paren-match-background )))))
 
 (provide-theme 'b0h-dark)
