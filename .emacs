@@ -27,19 +27,6 @@
 (setq initial-scratch-message nil)
 (setq line-move-visual nil)
 (global-set-key (kbd "C-c p") 'find-lisp-find-dired)
-;; reference: https://emacs.stackexchange.com/questions/21651
-(defun b0h-preferred-window-split (&optional window)
-  (cond
-   ((and (> (window-pixel-width window)
-            (window-pixel-height window))
-         (window-splittable-p window 'horizontal))
-    (with-selected-window window
-      (split-window-right)))
-   ((window-splittable-p window)
-    (with-selected-window window
-      (split-window-below)))))
-(setq split-window-preferred-function #'b0h-preferred-window-split)
-(setq split-width-threshold 80)
 (setq split-height-threshold 40)
 (setq b0h-saved-visible-window-attributes nil)
 (defun b0h-set-window-start-by-line (window line) ;; line=1 => first line
@@ -701,3 +688,8 @@
 (eval-after-load "dired" '(define-key dired-mode-map (kbd "å") 'dired-up-directory))
 (eval-after-load "eglot" '(setq eglot-events-buffer-size 0
                                 eglot-ignored-server-capabilities '(:documentHighlightProvider)))
+(setq mode-line-percent-position nil)
+(defun b0h-recenter-after-jump (&rest r)
+  (recenter (/ (window-body-height) 8)))
+(advice-add 'imenu :after #'b0h-recenter-after-jump)
+(load "dired-x")
