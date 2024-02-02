@@ -202,11 +202,15 @@
       (deactivate-mark))))
 (defun b0h-paste ()
   (interactive)
-  (let ((text (gui-backend-get-selection 'CLIPBOARD 'STRING)))
+  (let ((text (gui-backend-get-selection 'CLIPBOARD 'STRING))
+        (start-point (point)))
     (if text
-        (insert text)
+        (progn
+          (insert text)
+          (push-mark start-point))
       (when b0h-locally-last-copied-text
-        (insert b0h-locally-last-copied-text)))))
+        (insert b0h-locally-last-copied-text)
+        (push-mark start-point)))))
 (global-set-key (kbd "M-w") 'b0h-copy)
 (global-set-key (kbd "C-y") 'b0h-paste)
 (global-set-key (kbd "C-w") 'b0h-cut)
@@ -219,14 +223,10 @@
 (advice-add 'dired-copy-filename-as-kill :around #'b0h-dired-copy-filename-as-kill-wrapper)
 (defun b0h-isearch-clipboard-paste ()
   (interactive)
-  (let* ((str "")
-         (clipboard-text (gui-backend-get-selection 'CLIPBOARD 'STRING))
+  (let* ((clipboard-text (gui-backend-get-selection 'CLIPBOARD 'STRING))
          (text (if clipboard-text clipboard-text b0h-locally-last-copied-text)))
     (when text
-      (with-temp-buffer
-        (insert text)
-        (setq str (buffer-string)))
-      (isearch-yank-string str))))
+      (isearch-yank-string text))))
 (define-key isearch-mode-map (kbd "C-y") 'b0h-isearch-clipboard-paste)
 (global-set-key (kbd "C-_") 'undo-only)
 (setq confirm-kill-emacs #'yes-or-no-p)
