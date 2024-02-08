@@ -216,9 +216,12 @@
 (global-set-key (kbd "C-w") 'b0h-cut)
 (global-set-key (kbd "C-M-y") 'yank-pop)
 (global-set-key (kbd "M-y") 'yank)
+(defun b0h-gui-select-text-wrapper (text)
+  (gui-select-text text)
+  (setq b0h-locally-last-copied-text text))
 (defun b0h-dired-copy-filename-as-kill-wrapper (fun &rest args)
   (let ((select-enable-clipboard t)
-        (interprogram-cut-function #'gui-select-text))
+        (interprogram-cut-function #'b0h-gui-select-text-wrapper))
     (apply fun args)))
 (advice-add 'dired-copy-filename-as-kill :around #'b0h-dired-copy-filename-as-kill-wrapper)
 (defun b0h-isearch-clipboard-paste ()
@@ -711,6 +714,7 @@
 (eval-after-load "diff-mode" '(progn
                                 (define-key diff-mode-map (kbd "M-o") nil)
                                 (define-key diff-mode-map (kbd "C-o") 'diff-goto-source)))
+(eval-after-load "ibuffer" '(define-key ibuffer-mode-map (kbd "M-o") nil))
 (defun b0h-compile-goto-error ()
   (interactive)
   (let ((display-buffer-overriding-action
@@ -762,3 +766,5 @@
     (exchange-point-and-mark)
     (end-of-line)))
 (global-set-key (kbd "C-x C-z") 'b0h-mark-lines)
+(setq visible-bell t)
+(global-set-key (kbd "C-x C-b") 'ibuffer)
