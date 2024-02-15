@@ -779,3 +779,10 @@
   (let ((delta (- height (window-text-height (selected-window)))))
     (unless (zerop delta)
       (window-resize (selected-window) delta))))
+(defun b0h-eshell-previous-matching-input () ;; inspired by eshell-previous-matching-input
+  (interactive)
+  (let ((input (completing-read "Search shell history: " (ring-elements eshell-history-ring) nil t nil t)))
+    (delete-region eshell-last-output-end (point-max))
+    (goto-char (point-max))
+    (insert-and-inherit input)))
+(eval-after-load "em-hist" '(define-key eshell-hist-mode-map (kbd "M-r") 'b0h-eshell-previous-matching-input))
