@@ -661,14 +661,16 @@
   (interactive "*")
   (let ((inhibit-field-text-motion t))
     (move-beginning-of-line nil)
-    (electric-indent-just-newline 1)
+    (let ((electric-indent-mode nil))
+      (newline))
     (forward-line -1)
     (when should-indent
       (indent-for-tab-command))))
 (defun b0h-newline-after (should-indent)
   (interactive "*")
   (move-end-of-line nil)
-  (electric-indent-just-newline 1)
+  (let ((electric-indent-mode nil))
+    (newline))
   (when should-indent
     (indent-for-tab-command)))
 (global-set-key (kbd "C-o") (lambda () (interactive) (b0h-newline-before (not (eq major-mode 'fundamental-mode)))))
