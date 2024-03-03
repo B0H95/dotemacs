@@ -29,7 +29,7 @@
 (defun b0h-search-filesystem ()
   (interactive)
   (let* ((dir (string-replace "/./" "/" (read-directory-name "Find files in directory: ")))
-         (files (mapc (lambda (path) `(,path . "hue")) (directory-files-recursively dir ""))))
+         (files (directory-files-recursively dir "")))
     (find-file (completing-read "Select file " files nil t nil t))))
 (global-set-key (kbd "C-c p") 'b0h-search-filesystem)
 (global-set-key (kbd "C-c P") 'find-lisp-find-dired)
