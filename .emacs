@@ -240,6 +240,30 @@
     (when text
       (isearch-yank-string text))))
 (define-key isearch-mode-map (kbd "C-y") 'b0h-isearch-clipboard-paste)
+(defun b0h-get-file-path ()
+  (if (buffer-file-name)
+      (buffer-file-name)
+    default-directory))
+(defun b0h-get-file-name ()
+  (let ((path (b0h-get-file-path)))
+    (when path
+      (setq path (string-trim-right path "/"))
+      (setq path (string-split path "/"))
+      (car (last path)))))
+(defun b0h-copy-file-path ()
+  (interactive)
+  (let ((path (b0h-get-file-path)))
+    (when path
+      (gui-backend-set-selection 'CLIPBOARD path)
+      (setq b0h-locally-last-copied-text path))))
+(defun b0h-copy-file-name ()
+  (interactive)
+  (let ((name (b0h-get-file-name)))
+    (when name
+      (gui-backend-set-selection 'CLIPBOARD name)
+      (setq b0h-locally-last-copied-text name))))
+(global-set-key (kbd "C-x C-v") 'b0h-copy-file-path)
+(global-set-key (kbd "C-x C-r") 'b0h-copy-file-name)
 (global-set-key (kbd "C-_") 'undo-only)
 (setq confirm-kill-emacs #'yes-or-no-p)
 (defun b0h-toggle-selective-display ()
@@ -531,6 +555,7 @@
       (let ((pos (nth 0 b0h-jump-mode-previous-starting-point))
             (win (nth 1 b0h-jump-mode-previous-starting-point)))
         (when (window-live-p win)
+          (setq b0h-jump-mode-previous-starting-point (list (copy-marker (point)) (get-buffer-window)))
           (select-window win)
           (goto-char pos))))))
 (keyboard-translate ?\C-i ?\H-i)
@@ -558,6 +583,8 @@
             (insert (format "%s:%s:%s" (string-remove-prefix dir file) linum line))))
         (setq prev-linum linum)))))
 (defun b0h-do-file-search (dir pattern str case-insensitive enable-regexp)
+  (when isearch-mode
+    (isearch-exit))
   (let ((case-fold-search case-insensitive)
         (search-fn (if enable-regexp 're-search-forward 'search-forward))
         (syntax (syntax-table))
@@ -800,3 +827,45 @@
     (insert-and-inherit input)))
 (eval-after-load "em-hist" '(define-key eshell-hist-mode-map (kbd "M-r") 'b0h-eshell-previous-matching-input))
 (electric-pair-mode 1)
+(defun b0h-mark-sexp ()
+  (interactive)
+  (if mark-active
+      (progn
+        (when (< (point) (mark))
+          (exchange-point-and-mark))
+        (ignore-errors (forward-sexp))
+        (exchange-point-and-mark))
+    (ignore-errors
+      (forward-sexp)
+      (backward-sexp))
+    (mark-sexp)))
+(defun b0h-mark-sexp-revert ()
+  (interactive)
+  (let ((min-point (point)))
+    (when mark-active
+      (when (< (mark) (point))
+        (exchange-point-and-mark))
+      (save-excursion
+        (ignore-errors (forward-sexp))
+        (setq min-point (point)))
+      (exchange-point-and-mark)
+      (ignore-errors
+        (backward-sexp 2)
+        (forward-sexp))
+      (when (< (point) (mark))
+        (goto-char min-point))
+      (exchange-point-and-mark))))
+(global-set-key (kbd "C-x C-d") 'fill-paragraph)
+(global-set-key (kbd "M-q") 'b0h-mark-sexp)
+(global-set-key (kbd "M-Q") 'b0h-mark-sexp-revert)
+(eval-after-load "cc-mode"
+  '(progn
+     (define-key c-mode-map (kbd "C-x C-d") 'c-fill-paragraph)
+     (define-key c-mode-map (kbd "M-q") 'b0h-mark-sexp)
+     (define-key c-mode-map (kbd "M-Q") 'b0h-mark-sexp-revert)))
+(eval-after-load "org"
+  '(progn
+     (define-key org-mode-map (kbd "C-x C-d") 'org-fill-paragraph)
+     (define-key org-mode-map (kbd "M-q") 'b0h-mark-sexp)
+     (define-key org-mode-map (kbd "M-Q") 'b0h-mark-sexp-revert)))
+(define-key isearch-mode-map (kbd "C-g") 'isearch-cancel)
