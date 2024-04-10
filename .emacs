@@ -862,7 +862,10 @@
   '(progn
      (define-key c-mode-map (kbd "C-x C-d") 'c-fill-paragraph)
      (define-key c-mode-map (kbd "M-q") 'b0h-mark-sexp)
-     (define-key c-mode-map (kbd "M-Q") 'b0h-mark-sexp-revert)))
+     (define-key c-mode-map (kbd "M-Q") 'b0h-mark-sexp-revert)
+     (define-key c++-mode-map (kbd "C-x C-d") 'c-fill-paragraph)
+     (define-key c++-mode-map (kbd "M-q") 'b0h-mark-sexp)
+     (define-key c++-mode-map (kbd "M-Q") 'b0h-mark-sexp-revert)))
 (eval-after-load "org"
   '(progn
      (define-key org-mode-map (kbd "C-x C-d") 'org-fill-paragraph)
