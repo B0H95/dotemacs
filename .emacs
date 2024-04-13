@@ -872,3 +872,4 @@
      (define-key org-mode-map (kbd "M-q") 'b0h-mark-sexp)
      (define-key org-mode-map (kbd "M-Q") 'b0h-mark-sexp-revert)))
 (define-key isearch-mode-map (kbd "C-g") 'isearch-cancel)
+(setq calc-algebraic-mode t)
