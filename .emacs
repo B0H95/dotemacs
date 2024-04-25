@@ -871,5 +871,12 @@
      (define-key org-mode-map (kbd "C-x C-d") 'org-fill-paragraph)
      (define-key org-mode-map (kbd "M-q") 'b0h-mark-sexp)
      (define-key org-mode-map (kbd "M-Q") 'b0h-mark-sexp-revert)))
+(eval-after-load "erlang"
+  '(progn
+     (define-key erlang-mode-map (kbd "C-x C-d") 'erlang-fill-paragraph)
+     (define-key erlang-mode-map (kbd "M-q") 'b0h-mark-sexp)
+     (define-key erlang-mode-map (kbd "M-Q") 'b0h-mark-sexp-revert)))
 (define-key isearch-mode-map (kbd "C-g") 'isearch-cancel)
 (setq calc-algebraic-mode t)
+(global-set-key (kbd "C-M-SPC") 'cycle-spacing)
+(global-set-key (kbd "M-SPC") 'hippie-expand)
