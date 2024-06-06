@@ -791,12 +791,16 @@
 (defun b0h-mark-lines ()
   (interactive)
   (if mark-active
-      (progn
+      (let ((orig-point (point))
+            (orig-mark (mark)))
         (when (< (mark) (point))
           (exchange-point-and-mark))
         (beginning-of-line)
         (exchange-point-and-mark)
-        (end-of-line))
+        (end-of-line)
+        (when (and (= orig-point (point)) (= orig-mark (mark)))
+          (forward-line)
+          (end-of-line)))
     (push-mark)
     (beginning-of-line)
     (exchange-point-and-mark)
@@ -880,3 +884,24 @@
 (setq calc-algebraic-mode t)
 (global-set-key (kbd "C-M-SPC") 'cycle-spacing)
 (global-set-key (kbd "M-SPC") 'hippie-expand)
+(setq hippie-expand-try-functions-list '(try-expand-line
+                                         try-expand-dabbrev
+                                         try-expand-dabbrev-all-buffers
+                                         try-expand-dabbrev-from-kill
+                                         try-complete-file-name-partially
+                                         try-complete-file-name
+                                         try-expand-all-abbrevs
+                                         try-complete-lisp-symbol-partially
+                                         try-complete-lisp-symbol))
+(defun b0h-upcase-region-or-word ()
+  (interactive)
+  (if mark-active
+      (upcase-region (region-beginning) (region-end))
+    (upcase-word -1)))
+(defun b0h-downcase-region-or-word ()
+  (interactive)
+  (if mark-active
+      (downcase-region (region-beginning) (region-end))
+    (downcase-word -1)))
+(global-set-key (kbd "C-x C-u") 'b0h-upcase-region-or-word)
+(global-set-key (kbd "C-x C-l") 'b0h-downcase-region-or-word)
