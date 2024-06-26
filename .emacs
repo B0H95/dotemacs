@@ -715,6 +715,8 @@
 (eval-after-load "org" '(define-key org-mode-map (kbd "C-j") (lambda () (interactive) (b0h-newline-after nil))))
 (define-key text-mode-map (kbd "C-o") (lambda () (interactive) (b0h-newline-before nil)))
 (define-key text-mode-map (kbd "C-j") (lambda () (interactive) (b0h-newline-after nil)))
+(eval-after-load "tex-mode" '(define-key tex-mode-map (kbd "C-o") (lambda () (interactive) (b0h-newline-before nil))))
+(eval-after-load "tex-mode" '(define-key tex-mode-map (kbd "C-j") (lambda () (interactive) (b0h-newline-after nil))))
 (setq create-lockfiles nil)
 (global-set-key (kbd "C-M-<backspace>") 'backward-kill-sexp)
 (setq cycle-spacing-actions '(delete-all-space just-one-space restore))
@@ -883,16 +885,19 @@
 (define-key isearch-mode-map (kbd "C-g") 'isearch-cancel)
 (setq calc-algebraic-mode t)
 (global-set-key (kbd "C-M-SPC") 'cycle-spacing)
-(global-set-key (kbd "M-SPC") 'hippie-expand)
-(setq hippie-expand-try-functions-list '(try-expand-line
-                                         try-expand-dabbrev
-                                         try-expand-dabbrev-all-buffers
-                                         try-expand-dabbrev-from-kill
-                                         try-complete-file-name-partially
+(global-set-key (kbd "C-M-SPC") (lambda () (interactive) (cycle-spacing -1)))
+(global-set-key (kbd "M-/") 'hippie-expand)
+(global-set-key (kbd "M-SPC") 'dabbrev-expand)
+(setq hippie-expand-try-functions-list '(try-complete-file-name-partially
                                          try-complete-file-name
-                                         try-expand-all-abbrevs
-                                         try-complete-lisp-symbol-partially
-                                         try-complete-lisp-symbol))
+                                         ;; try-expand-dabbrev
+                                         ;; try-expand-dabbrev-all-buffers
+                                         ;; try-expand-dabbrev-from-kill
+                                         ;; try-expand-line
+                                         ;; try-expand-all-abbrevs
+                                         ;; try-complete-lisp-symbol-partially
+                                         ;; try-complete-lisp-symbol
+                                         ))
 (defun b0h-upcase-region-or-word ()
   (interactive)
   (if mark-active
@@ -905,3 +910,4 @@
     (downcase-word -1)))
 (global-set-key (kbd "C-x C-u") 'b0h-upcase-region-or-word)
 (global-set-key (kbd "C-x C-l") 'b0h-downcase-region-or-word)
+(fringe-mode '(4 . 4))
