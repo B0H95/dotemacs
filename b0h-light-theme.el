@@ -36,6 +36,7 @@
  `(lazy-highlight ((t (:background ,b0h-light-theme-search-highlight-color))))
  `(mode-line-inactive ((t (:inherit mode-line :background ,b0h-light-theme-mode-line-inactive-color))))
  `(mode-line-active ((t (:inherit mode-line :background ,b0h-light-theme-mode-line-active-color))))
+ `(mode-line ((t (:background ,b0h-light-theme-mode-line-active-color :box (:line-width -1 :style released-button)))))
  `(fringe ((t (:background ,b0h-light-theme-fringe-color))))
  `(dired-directory ((t (:foreground ,b0h-light-theme-dired-directory-color)))))
 
