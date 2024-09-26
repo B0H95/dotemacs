@@ -19,7 +19,7 @@ bindsym $mod+l exec --no-startup-id "i3lock -c 00206B"
 
 bindsym $mod+Shift+q kill
 
-bindsym $mod+d exec --no-startup-id "dmenu_run -nf '#BBBBBB' -nb '#222222' -sb '#005577' -sf '#EEEEEE' -fn 'monospace-12'"
+bindsym $mod+d exec --no-startup-id "dmenu_run -nf '#99FFAA' -nb '#01190B' -sb '#024D07' -sf '#99FFAA' -fn 'monospace-12'"
 
 bindsym $mod+Left focus left
 bindsym $mod+Down focus down
@@ -100,7 +100,7 @@ bindsym $mod+r mode "resize"
 # class                 border  bground text    indicator child_border
 client.focused          #7DFFAD #024D07 #99FFAA #D10076   #7DFFAD
 client.focused_inactive #448A5D #012B04 #51875A #D10076   #448A5D
-client.unfocused        #274F35 #011C03 #2B4730 #D10076   #274F35
+client.unfocused        #3D7D55 #011C03 #99FFAA #D10076   #3D7D55
 client.urgent           #FF7575 #4D0404 #FF9696 #D10076   #FF7575
 client.placeholder      #202020 #000000 #FFFFFF #D10076   #202020
 client.background       #000000
