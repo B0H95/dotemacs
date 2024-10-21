@@ -16,4 +16,8 @@ dnf install \
     SDL2_mixer SDL2_mixer-devel SDL2_net SDL2_net-devel \
     SDL2_sound SDL2_sound-devel SDL2_ttf SDL2_ttf-devel \
     SDL2_gfx SDL2_gfx-devel \
-    unrar
+    unrar \
+    openssl \
+    java-latest-openjdk java-latest-openjdk-devel \
+    mupdf \
+    R
