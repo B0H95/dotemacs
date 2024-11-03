@@ -18,6 +18,6 @@ dnf install \
     SDL2_gfx SDL2_gfx-devel \
     unrar \
     openssl \
-    java-latest-openjdk java-latest-openjdk-devel \
+    java-latest-openjdk java-latest-openjdk-devel ant \
     mupdf \
     R
