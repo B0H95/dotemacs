@@ -170,7 +170,7 @@
     (kill-whole-line)))
 (defun b0h-paste ()
   (interactive)
-  (let ((text (gui-backend-get-selection 'CLIPBOARD 'STRING))
+  (let ((text (gui--selection-value-internal 'CLIPBOARD))
         (start-point (point)))
     (if text
         (progn
@@ -196,7 +196,7 @@
 (advice-add 'dired-copy-filename-as-kill :around #'b0h-dired-copy-filename-as-kill-wrapper)
 (defun b0h-isearch-clipboard-paste ()
   (interactive)
-  (let* ((clipboard-text (gui-backend-get-selection 'CLIPBOARD 'STRING))
+  (let* ((clipboard-text (gui--selection-value-internal 'CLIPBOARD))
          (text (if clipboard-text clipboard-text b0h-locally-last-copied-text)))
     (when text
       (isearch-yank-string text))))
