@@ -376,7 +376,7 @@
                     (when (char-after)
                       (puthash (downcase (make-string 1 (char-after))) nil vacant-letter-table))))
                 (ignore-errors
-                  (if (/= (point) (point-at-eol))
+                  (if (not (eolp))
                       (forward-char)
                     (let ((prev-point (point)))
                       (next-line)
