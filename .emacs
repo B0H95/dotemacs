@@ -695,7 +695,10 @@
 (set-charset-priority 'unicode)
 (prefer-coding-system 'utf-8-unix)
 (global-set-key (kbd "M-z") 'zap-up-to-char)
-(setq project-vc-extra-root-markers '("package.json" "build.zig"))
+(setq project-vc-extra-root-markers '("package.json"
+                                      "build.zig"
+                                      "pyrightconfig.json"
+                                      "compile_commands.json"))
 (setq hi-lock-use-overlays t)
 (savehist-mode 1)
 (eval-after-load "sgml-mode" '(define-key html-mode-map (kbd "M-o") nil))
