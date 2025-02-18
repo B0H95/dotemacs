@@ -871,3 +871,8 @@
                               (setq company-minimum-prefix-length 1)
                               (setq company-idle-delay 0)))
 (desktop-save-mode 1)
+(setq tab-always-indent 'complete)
+(setq completions-max-height 20)
+(setq completions-format 'vertical)
+(setq completion-ignore-case t)
+(eval-after-load "cc-mode" '(define-key c-mode-base-map (kbd "TAB") 'indent-for-tab-command))
