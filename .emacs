@@ -822,12 +822,9 @@
 (global-set-key (kbd "M-Q") 'b0h-mark-sexp-revert)
 (eval-after-load "cc-mode"
   '(progn
-     (define-key c-mode-map (kbd "C-x C-d") 'c-fill-paragraph)
-     (define-key c-mode-map (kbd "M-q") 'b0h-mark-sexp)
-     (define-key c-mode-map (kbd "M-Q") 'b0h-mark-sexp-revert)
-     (define-key c++-mode-map (kbd "C-x C-d") 'c-fill-paragraph)
-     (define-key c++-mode-map (kbd "M-q") 'b0h-mark-sexp)
-     (define-key c++-mode-map (kbd "M-Q") 'b0h-mark-sexp-revert)))
+     (define-key c-mode-base-map (kbd "C-x C-d") 'c-fill-paragraph)
+     (define-key c-mode-base-map (kbd "M-q") 'b0h-mark-sexp)
+     (define-key c-mode-base-map (kbd "M-Q") 'b0h-mark-sexp-revert)))
 (eval-after-load "org"
   '(progn
      (define-key org-mode-map (kbd "C-x C-d") 'org-fill-paragraph)
@@ -876,3 +873,11 @@
 (setq completions-format 'vertical)
 (setq completion-ignore-case t)
 (eval-after-load "cc-mode" '(define-key c-mode-base-map (kbd "TAB") 'indent-for-tab-command))
+(require 'dabbrev)
+;; see https://lists.gnu.org/archive/html/bug-gnu-emacs/2023-02/msg00214.html
+(defun b0h-completion-at-point-wrapper (&rest r)
+  (dabbrev--reset-global-variables)
+  (setq dabbrev--check-other-buffers t)
+  (setq dabbrev--check-all-buffers t))
+(advice-add 'completion-at-point :before #'b0h-completion-at-point-wrapper)
+(setq completion-at-point-functions '(tags-completion-at-point-function dabbrev-capf))
