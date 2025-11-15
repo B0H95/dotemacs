@@ -126,6 +126,7 @@
       undo-strong-limit 2000000
       undo-outer-limit 36000000)
 (setq parens-require-spaces nil)
+(setq python-forward-sexp-function nil)
 
 ;; Improve highlight colors, also adds a command for isearching highlights.
 (defface b0h-hi-yellow-1 '((t (:foreground "#000000" :background "#C7C797"))) "Face for hi-lock mode.")
@@ -770,22 +771,6 @@
 (eval-after-load "grep" '(define-key grep-mode-map (kbd "RET") 'b0h-compile-goto-error))
 
 ;; Various quality of life commands for selecting things.
-(defun b0h-mark-enclosing-group ()
-  (interactive)
-  (when (and mark-active (< (mark) (point)))
-    (exchange-point-and-mark))
-  (let ((start-point (point))
-        (end-point (if mark-active (mark) (point))))
-    (backward-up-list nil t t)
-    (deactivate-mark)
-    (mark-sexp)
-    (when (or (/= 1 (- start-point (point)))
-              (/= 1 (- (mark) end-point)))
-      (forward-char)
-      (exchange-point-and-mark)
-      (backward-char)
-      (exchange-point-and-mark))))
-(global-set-key (kbd "C-x C-z") 'b0h-mark-enclosing-group)
 (defun b0h-mark-lines ()
   (interactive)
   (if mark-active
@@ -975,6 +960,17 @@
 (define-key icomplete-fido-mode-map (kbd "M-RET") 'icomplete-fido-exit)
 (define-key icomplete-fido-mode-map (kbd "C-<return>") 'icomplete-force-complete-and-exit)
 
+;; Shortcut for calculating.
+(require 'calc)
+(defun b0h-calc (should-insert)
+  (interactive "P")
+  (if (not mark-active)
+      (quick-calc should-insert)
+    (let ((result (calc-eval (buffer-substring-no-properties (region-beginning) (region-end)))))
+      (delete-region (region-beginning) (region-end))
+      (insert result))))
+(global-set-key (kbd "C-x C-z") 'b0h-calc)
+
 ;; Keybindings.
 (global-set-key (kbd "C-c p") 'find-lisp-find-dired)
 (global-set-key (kbd "C-_") 'undo-only)
@@ -1024,6 +1020,8 @@
 (global-set-key (kbd "M-}") 'up-list)
 (eval-after-load "org" '(define-key org-mode-map (kbd "M-{") 'insert-pair))
 (eval-after-load "org" '(define-key org-mode-map (kbd "M-}") 'up-list))
+(eval-after-load "compile" '(define-key compilation-shell-minor-mode-map (kbd "M-{") nil))
+(eval-after-load "compile" '(define-key compilation-shell-minor-mode-map (kbd "M-}") nil))
 (global-set-key (kbd "M-'") 'insert-pair)
 (global-set-key (kbd "M-\"") 'insert-pair)
 (define-key indent-rigidly-map (kbd "<backtab>") 'indent-rigidly-left)
