@@ -43,7 +43,7 @@
 (put 'downcase-region 'disabled nil)
 (put 'upcase-region 'disabled nil)
 (put 'set-goal-column 'disabled nil)
-(setq dired-listing-switches "-lah")
+(setq dired-listing-switches "-lahD --group-directories-first")
 (setq create-lockfiles nil)
 (setq cycle-spacing-actions '(delete-all-space just-one-space restore))
 (setq require-final-newline t)
